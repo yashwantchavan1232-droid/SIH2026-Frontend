@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIH Investigation Dashboard</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- External Libraries -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 3D Background -->
+  <div id="three-container"></div>
+
+  <!-- Main App -->
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <div class="logo-container">
+        <div class="logo-icon">🧠</div>
+        <h1>SIH<span>.investigate</span></h1>
+      </div>
+      <nav id="nav-links">
+        <button class="nav-btn active" data-page="dashboard">📊 Dashboard</button>
+        <button class="nav-btn" data-page="search">🔍 Search</button>
+        <button class="nav-btn" data-page="profile">👤 Profile</button>
+        <button class="nav-btn" data-page="graph">🌐 Graph</button>
+        <button class="nav-btn" data-page="evidence">✓ Evidence</button>
+        <button class="nav-btn" data-page="report">📄 Report</button>
+      </nav>
+    </header>
+
+    <!-- Page Container -->
+    <div id="page-container">
+      <!-- Dashboard Page -->
+      <div id="page-dashboard" class="page-content active">
+        <!-- Stats Cards -->
+        <section id="stats-container">
+          <div class="stat-card">
+            <div class="stat-label">Actors</div>
+            <div class="stat-value" data-stat="actors">--</div>
+            <div class="stat-trend up">▲ 12%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Aliases</div>
+            <div class="stat-value" data-stat="aliases">--</div>
+            <div class="stat-trend up">▲ 8%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Wallets</div>
+            <div class="stat-value" data-stat="wallets">--</div>
+            <div class="stat-trend down">▼ 2%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">PGP Keys</div>
+            <div class="stat-value" data-stat="pgp">--</div>
+            <div class="stat-trend up">▲ 4%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Relationships</div>
+            <div class="stat-value" data-stat="relationships">--</div>
+            <div class="stat-trend up">▲ 21%</div>
+          </div>
+        </section>
+
+        <!-- Search + Graph Row -->
+        <div class="row-2col">
+          <!-- Search -->
+          <div class="search-panel">
+            <div class="search-wrapper">
+              <input type="text" id="search-input" placeholder="🔎 Search actors, aliases, wallets..." />
+              <span class="search-badge">GET /search</span>
+            </div>
+            <div id="search-results" class="search-results hidden"></div>
+            <div id="search-loading" class="search-loading hidden">
+              <div class="spinner"></div> Searching...
+            </div>
+            <div id="search-error" class="search-error hidden">⚠️ Search failed</div>
+            <div class="search-tags">
+              <span>recent: "ghost"</span>
+              <span>"satoshi"</span>
+              <span>"0x3f2a"</span>
+            </div>
+          </div>
+
+          <!-- Graph -->
+          <div class="graph-panel">
+            <div class="graph-header">
+              <span>🌐 force graph · D3</span>
+              <span>Actor → Alias/Wallet/PGP/Post/Infra</span>
+            </div>
+            <div id="d3-graph"></div>
+          </div>
+        </div>
+
+        <!-- Profile + Evidence + Report -->
+        <div class="row-3col">
+          <!-- Actor Profile -->
+          <div id="actor-profile" class="profile-panel">
+            <div class="profile-header">
+              <div class="profile-avatar">👤</div>
+              <div>
+                <h3 id="actor-name">Loading...</h3>
+                <p>confidence <span id="actor-confidence">--%</span></p>
+              </div>
+            </div>
+            <div class="profile-details">
+              <div><span>Aliases</span> <span id="actor-aliases">--</span></div>
+              <div><span>Wallets</span> <span id="actor-wallets">--</span></div>
+              <div><span>PGP</span> <span id="actor-pgp">--</span></div>
+              <div><span>Posts</span> <span id="actor-posts">--</span></div>
+            </div>
+            <div id="actor-tags" class="profile-tags"></div>
+            <div class="profile-footer">
+              <span id="actor-last-active">📅 last active: --</span>
+              <span id="actor-connections">🔗 -- connections</span>
+            </div>
+            <div id="profile-loading" class="profile-loading hidden">
+              <div class="spinner"></div> Loading profile...
+            </div>
+          </div>
+
+          <!-- Evidence Panel -->
+          <div id="evidence-panel" class="evidence-panel">
+            <div class="evidence-header">
+              <span>✓</span>
+              <h4>Evidence · Linkage</h4>
+              <span id="evidence-confidence">--%</span>
+            </div>
+            <div id="evidence-list" class="evidence-list">
+              <div class="text-gray-400">Loading evidence...</div>
+            </div>
+            <div class="evidence-footer">
+              <span id="expand-evidence">expand</span>
+            </div>
+            <div id="evidence-loading" class="evidence-loading hidden">
+              <div class="spinner"></div> Loading evidence...
+            </div>
+          </div>
+
+          <!-- Report -->
+          <div class="report-panel">
+            <div class="report-header">
+              <span>📄</span>
+              <h4>Report · Export</h4>
+            </div>
+            <div class="report-buttons">
+              <button id="export-json">⬇️ JSON</button>
+              <button id="export-csv">⬇️ CSV</button>
+              <button id="export-pdf">⬇️ PDF</button>
+            </div>
+            <div class="report-info">
+              <span>📌</span> last export: <span id="last-export">2026-08-31</span>
+            </div>
+            <div class="report-footer">client-side · mock data</div>
+            <div id="export-status" class="export-status hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other Pages (Hidden) -->
+      <div id="page-search" class="page-content hidden">
+        <div class="placeholder-page">
+          <h2>🔍 Search Page</h2>
+          <p>Full search interface with filters coming soon.</p>
+        </div>
+      </div>
+      <div id="page-profile" class="page-content hidden">
+        <div class="placeholder-page">
+          <h2>👤 Actor Profile</h2>
+          <p>Detailed profile view with full entity details.</p>
+        </div>
+      </div>
+      <div id="page-graph" class="page-content hidden">
+        <div class="placeholder-page">
+          <h2>🌐 Relationship Graph</h2>
+          <p>Full-screen D3 force-directed graph visualization.</p>
+        </div>
+      </div>
+      <div id="page-evidence" class="page-content hidden">
+        <div class="placeholder-page">
+          <h2>✓ Evidence Panel</h2>
+          <p>Detailed evidence with checkmarks and confidence %.</p>
+        </div>
+      </div>
+      <div id="page-report" class="page-content hidden">
+        <div class="placeholder-page">
+          <h2>📄 Report Page</h2>
+          <p>Export reports in JSON, CSV, or PDF format.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="js/api.js"></script>
+  <script src="js/three.js"></script>
+  <script src="js/component/graph.js"></script>
+  <script src="js/component/Dashboard.js"></script>
+  <script src="js/component/search.js"></script>
+  <script src="js/component/profile.js"></script>
+  <script src="js/component/evidence.js"></script>
+  <script src="js/component/report.js"></script>
+  <script src="js/component/app.js"></script>
+</body>
+</html>
