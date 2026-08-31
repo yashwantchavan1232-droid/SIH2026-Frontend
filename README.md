@@ -1,2 +1,2 @@
-# SIH2026-Frontend
+# SIH2026-Frontends
 SIH Investigation Dashboard - Frontend
